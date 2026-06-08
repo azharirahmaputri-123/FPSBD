@@ -1,113 +1,42 @@
 const db = require('../database/db');
 
-exports.index = async (req, res) => {
+// 1. Mengambil semua data karyawan
+const getAllKaryawan = async (req, res) => {
     try {
-
-        const [karyawan] = await db.query(
-            'SELECT * FROM karyawan ORDER BY id_karyawan DESC'
-        );
-
-        res.render('karyawan/index', {
-            karyawan
+        const [rows] = await db.query('SELECT * FROM TABLE_KARYAWAN');
+        res.status(200).json({
+            status: 'Success',
+            message: 'Berhasil mengambil data karyawan',
+            data: rows
         });
-
     } catch (error) {
-        console.log(error);
-        res.send('Terjadi kesalahan');
+        res.status(500).json({ status: 'Fail', message: error.message });
     }
 };
 
-exports.createForm = async (req, res) => {
-    res.render('karyawan/create');
-};
-
-exports.store = async (req, res) => {
-    try {
-
-        const {
-            nama_karyawan,
-            jabatan,
-            telepon
-        } = req.body;
-
-        await db.query(
-            `INSERT INTO karyawan
-            (nama_karyawan, jabatan, telepon)
-            VALUES (?, ?, ?)`,
-            [nama_karyawan, jabatan, telepon]
-        );
-
-        res.redirect('/karyawan');
-
-    } catch (error) {
-        console.log(error);
-        res.send('Terjadi kesalahan');
+// 2. Menambahkan karyawan baru
+const createKaryawan = async (req, res) => {
+    const { Nama, Jabatan, NO_Hp } = req.body;
+    
+    if (!Nama) {
+        return res.status(400).json({ status: 'Fail', message: 'Nama karyawan harus diisi' });
     }
-};
 
-exports.editForm = async (req, res) => {
     try {
-
-        const { id } = req.params;
-
-        const [karyawan] = await db.query(
-            'SELECT * FROM karyawan WHERE id_karyawan = ?',
-            [id]
-        );
-
-        res.render('karyawan/edit', {
-            karyawan: karyawan[0]
+        const query = 'INSERT INTO TABLE_KARYAWAN (Nama, Jabatan, NO_Hp) VALUES (?, ?, ?)';
+        const [result] = await db.query(query, [Nama, Jabatan, NO_Hp]);
+        
+        res.status(201).json({
+            status: 'Success',
+            message: 'Karyawan berhasil ditambahkan',
+            data: { id: result.insertId, Nama, Jabatan, NO_Hp }
         });
-
     } catch (error) {
-        console.log(error);
-        res.send('Terjadi kesalahan');
+        res.status(500).json({ status: 'Fail', message: error.message });
     }
 };
 
-exports.update = async (req, res) => {
-    try {
-
-        const { id } = req.params;
-
-        const {
-            nama_karyawan,
-            jabatan,
-            telepon
-        } = req.body;
-
-        await db.query(
-            `UPDATE karyawan
-            SET
-                nama_karyawan = ?,
-                jabatan = ?,
-                telepon = ?
-            WHERE id_karyawan = ?`,
-            [nama_karyawan, jabatan, telepon, id]
-        );
-
-        res.redirect('/karyawan');
-
-    } catch (error) {
-        console.log(error);
-        res.send('Terjadi kesalahan');
-    }
-};
-
-exports.destroy = async (req, res) => {
-    try {
-
-        const { id } = req.params;
-
-        await db.query(
-            'DELETE FROM karyawan WHERE id_karyawan = ?',
-            [id]
-        );
-
-        res.redirect('/karyawan');
-
-    } catch (error) {
-        console.log(error);
-        res.send('Terjadi kesalahan');
-    }
+module.exports = {
+    getAllKaryawan,
+    createKaryawan
 };

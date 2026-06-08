@@ -1,110 +1,42 @@
 const db = require('../database/db');
 
-exports.index = async (req, res) => {
+// 1. Mengambil semua data menu
+const getAllMenu = async (req, res) => {
     try {
-        const [menu] = await db.query(
-            'SELECT * FROM menu ORDER BY id_menu DESC'
-        );
-
-        res.render('menu/index', { menu });
-
-    } catch (error) {
-        console.log(error);
-        res.send('Terjadi kesalahan');
-    }
-};
-
-exports.createForm = async (req, res) => {
-    res.render('menu/create');
-};
-
-exports.store = async (req, res) => {
-    try {
-
-        const {
-            nama_menu,
-            kategori,
-            harga
-        } = req.body;
-
-        await db.query(
-            `INSERT INTO menu
-            (nama_menu, kategori, harga)
-            VALUES (?, ?, ?)`,
-            [nama_menu, kategori, harga]
-        );
-
-        res.redirect('/menu');
-
-    } catch (error) {
-        console.log(error);
-        res.send('Terjadi kesalahan');
-    }
-};
-
-exports.editForm = async (req, res) => {
-    try {
-
-        const { id } = req.params;
-
-        const [menu] = await db.query(
-            'SELECT * FROM menu WHERE id_menu = ?',
-            [id]
-        );
-
-        res.render('menu/edit', {
-            menu: menu[0]
+        const [rows] = await db.query('SELECT * FROM TABLE_MENU');
+        res.status(200).json({
+            status: 'Success',
+            message: 'Berhasil mengambil daftar menu',
+            data: rows
         });
-
     } catch (error) {
-        console.log(error);
-        res.send('Terjadi kesalahan');
+        res.status(500).json({ status: 'Fail', message: error.message });
     }
 };
 
-exports.update = async (req, res) => {
+// 2. Menambahkan menu baru
+const createMenu = async (req, res) => {
+    const { Nama_Menu, Harga } = req.body;
+
+    if (!Nama_Menu || !Harga) {
+        return res.status(400).json({ status: 'Fail', message: 'Nama menu dan harga harus diisi' });
+    }
+
     try {
+        const query = 'INSERT INTO TABLE_MENU (Nama_Menu, Harga) VALUES (?, ?)';
+        const [result] = await db.query(query, [Nama_Menu, Harga]);
 
-        const { id } = req.params;
-
-        const {
-            nama_menu,
-            kategori,
-            harga
-        } = req.body;
-
-        await db.query(
-            `UPDATE menu
-            SET
-                nama_menu = ?,
-                kategori = ?,
-                harga = ?
-            WHERE id_menu = ?`,
-            [nama_menu, kategori, harga, id]
-        );
-
-        res.redirect('/menu');
-
+        res.status(201).json({
+            status: 'Success',
+            message: 'Menu berhasil ditambahkan',
+            data: { id: result.insertId, Nama_Menu, Harga }
+        });
     } catch (error) {
-        console.log(error);
-        res.send('Terjadi kesalahan');
+        res.status(500).json({ status: 'Fail', message: error.message });
     }
 };
 
-exports.destroy = async (req, res) => {
-    try {
-
-        const { id } = req.params;
-
-        await db.query(
-            'DELETE FROM menu WHERE id_menu = ?',
-            [id]
-        );
-
-        res.redirect('/menu');
-
-    } catch (error) {
-        console.log(error);
-        res.send('Terjadi kesalahan');
-    }
+module.exports = {
+    getAllMenu,
+    createMenu
 };
